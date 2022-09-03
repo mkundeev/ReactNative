@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import * as Font from "expo-font";
-import AppLoading from "expo-app-loading";
+
+import * as ScreenOrientation from "expo-screen-orientation";
+import * as SplashScreen from "expo-splash-screen";
 import {
   StyleSheet,
   Text,
@@ -12,20 +14,45 @@ import {
   KeyboardAvoidingView,
   Keyboard,
   TouchableWithoutFeedback,
+  useWindowDimensions,
 } from "react-native";
-
-const loadFonts = async () => {
-  await Font.loadAsync({
-    "DMMono-Regular": require("./assets/fonts/DMMono-Regular.ttf"),
-    "DMMono-Medium": require("./assets/fonts/DMMono-Medium.ttf"),
-  });
-};
 
 export default function App() {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [isShownKeybord, setIsShownKeybord] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [orientation, setOrientation] = useState(1);
+  const { height, width } = useWindowDimensions();
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        await Font.loadAsync({
+          "DMMono-Regular": require("./assets/fonts/DMMono-Regular.ttf"),
+          "DMMono-Medium": require("./assets/fonts/DMMono-Medium.ttf"),
+        });
+        let currentOrientation = await ScreenOrientation.getOrientationAsync();
+        setOrientation(currentOrientation);
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setIsReady(true);
+      }
+    }
+
+    prepare();
+  }, [height]);
+
+  const onLayoutRootView = useCallback(async () => {
+    if (isReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [isReady]);
+
+  if (!isReady) {
+    return null;
+  }
 
   const onKeyboradHide = () => {
     setIsShownKeybord(false);
@@ -37,19 +64,9 @@ export default function App() {
     setPassword("");
   };
 
-  if (!isReady) {
-    return (
-      <AppLoading
-        startAsync={loadFonts}
-        onFinish={() => setIsReady(true)}
-        onError={console.warn}
-      />
-    );
-  }
-
   return (
     <TouchableWithoutFeedback onPress={onKeyboradHide}>
-      <View style={styles.container}>
+      <View style={styles.container} onLayout={onLayoutRootView}>
         <ImageBackground
           source={require("./src/img/background-img.jpg")}
           style={styles.background}
@@ -59,12 +76,13 @@ export default function App() {
               style={{
                 ...styles.form,
                 marginBottom: isShownKeybord ? 20 : 150,
+                marginHorizontal: orientation > 2 ? 200 : 70,
               }}
             >
               <View style={styles.header}>
                 <Text style={styles.headerTitle}>Welcome</Text>
                 <Text style={styles.headerTitle}>
-                  email:{email} password:{password}
+                  orientation: {height}, {width},{orientation}
                 </Text>
               </View>
               <View>
@@ -112,6 +130,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
     marginBottom: 5,
+    fontFamily: "DMMono-Regular",
   },
   background: {
     flex: 1,
@@ -139,6 +158,7 @@ const styles = StyleSheet.create({
   textButton: {
     color: "#000",
     textAlign: "center",
+    fontFamily: "DMMono-Regular",
   },
   header: {
     marginBottom: 20,
