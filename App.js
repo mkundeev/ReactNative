@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import * as Font from "expo-font";
-import Svg, { Path, Circle } from "react-native-svg";
+import Svg, { Circle, Path } from "react-native-svg";
 
 import * as SplashScreen from "expo-splash-screen";
 import {
@@ -21,6 +21,7 @@ export default function App() {
   const [email, setEmail] = useState("");
   const [login, setLogin] = useState("");
   const [isShownKeybord, setIsShownKeybord] = useState(false);
+  const [isSecureTextEntry, IsSecureTextEntry] = useState(true);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -113,7 +114,6 @@ export default function App() {
                 <View style={{ marginBottom: 16 }}>
                   <TextInput
                     style={styles.input}
-                    textAlign="center"
                     value={login}
                     onChangeText={setLogin}
                     onFocus={() => setIsShownKeybord(true)}
@@ -124,7 +124,6 @@ export default function App() {
                 <View style={{ marginBottom: 16 }}>
                   <TextInput
                     style={styles.input}
-                    textAlign="center"
                     value={email}
                     onChangeText={setEmail}
                     onFocus={() => setIsShownKeybord(true)}
@@ -135,14 +134,23 @@ export default function App() {
                 <View style={{ marginBottom: isShownKeybord ? 0 : 43 }}>
                   <TextInput
                     style={styles.input}
-                    textAlign="center"
                     value={password}
                     onChangeText={setPassword}
-                    secureTextEntry={true}
+                    secureTextEntry={isSecureTextEntry}
                     onFocus={() => setIsShownKeybord(true)}
                     placeholder="Password"
                     placeholderTextColor="#fff"
                   ></TextInput>
+                  <View style={styles.showPasswordBox}>
+                    <Text
+                      style={styles.text}
+                      onPress={() => {
+                        IsSecureTextEntry(!isSecureTextEntry);
+                      }}
+                    >
+                      {isSecureTextEntry ? "Show password" : "Hide password"}
+                    </Text>
+                  </View>
                 </View>
                 <View style={{ display: isShownKeybord ? "none" : "flex" }}>
                   <TouchableOpacity
@@ -172,12 +180,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000",
   },
-  text: {
-    color: "#fff",
-    textAlign: "center",
-    marginBottom: 5,
-    fontFamily: "DMMono-Regular",
-  },
   background: {
     flex: 1,
     justifyContent: "flex-end",
@@ -185,7 +187,7 @@ const styles = StyleSheet.create({
   },
   form: { marginHorizontal: 16 },
   formBackdrop: {
-    backgroundColor: "#2c3639",
+    backgroundColor: "#121212",
     justifyContent: "flex-end",
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
@@ -196,7 +198,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderColor: "#fff",
     borderWidth: 1,
-    height: 40,
+    height: 50,
+    paddingLeft: 16,
     fontFamily: "DMMono-Regular",
   },
   button: {
@@ -245,5 +248,15 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: -13,
     bottom: 14,
+  },
+  showPasswordBox: {
+    position: "absolute",
+    bottom: 15,
+    right: 16,
+    color: "#FF6C00",
+  },
+  text: {
+    color: "#FF6C00",
+    fontFamily: "DMMono-Regular",
   },
 });
