@@ -16,7 +16,8 @@
     "react-native": "0.69.5",
     "expo-app-loading": "~2.1.0",
     "expo-splash-screen": "~0.16.2",
-    "expo-screen-orientation": "~4.3.0"
+    "expo-screen-orientation": "~4.3.0",
+    "react-native-svg": "12.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9"

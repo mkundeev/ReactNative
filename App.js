@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import * as Font from "expo-font";
+import Svg, { Path, Circle } from "react-native-svg";
 
-import * as ScreenOrientation from "expo-screen-orientation";
 import * as SplashScreen from "expo-splash-screen";
 import {
   StyleSheet,
@@ -14,16 +14,14 @@ import {
   KeyboardAvoidingView,
   Keyboard,
   TouchableWithoutFeedback,
-  useWindowDimensions,
 } from "react-native";
 
 export default function App() {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+  const [login, setLogin] = useState("");
   const [isShownKeybord, setIsShownKeybord] = useState(false);
   const [isReady, setIsReady] = useState(false);
-  const [orientation, setOrientation] = useState(1);
-  const { height, width } = useWindowDimensions();
 
   useEffect(() => {
     async function prepare() {
@@ -32,8 +30,6 @@ export default function App() {
           "DMMono-Regular": require("./assets/fonts/DMMono-Regular.ttf"),
           "DMMono-Medium": require("./assets/fonts/DMMono-Medium.ttf"),
         });
-        let currentOrientation = await ScreenOrientation.getOrientationAsync();
-        setOrientation(currentOrientation);
       } catch (e) {
         console.warn(e);
       } finally {
@@ -42,7 +38,7 @@ export default function App() {
     }
 
     prepare();
-  }, [height]);
+  }, []);
 
   const onLayoutRootView = useCallback(async () => {
     if (isReady) {
@@ -71,50 +67,100 @@ export default function App() {
           source={require("./src/img/background-img.jpg")}
           style={styles.background}
         >
-          <KeyboardAvoidingView behavior={Platform.OS === "ios" && "padding"}>
-            <View
-              style={{
-                ...styles.form,
-                marginBottom: isShownKeybord ? 20 : 150,
-                marginHorizontal: orientation > 2 ? 200 : 70,
-              }}
-            >
-              <View style={styles.header}>
-                <Text style={styles.headerTitle}>Welcome</Text>
-                <Text style={styles.headerTitle}>
-                  orientation: {height}, {width},{orientation}
-                </Text>
+          <View
+            style={{
+              ...styles.formBackdrop,
+              height: isShownKeybord ? 374 : 549,
+            }}
+          >
+            <View style={styles.centerBox}>
+              <View style={styles.avatarBox}>
+                <View style={styles.addIconBox}>
+                  <Svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="25"
+                    height="25"
+                    fill="none"
+                    viewBox="0 0 25 25"
+                  >
+                    <Circle
+                      cx="12.5"
+                      cy="12.5"
+                      r="12"
+                      fill="none"
+                      stroke="#FF6C00"
+                    ></Circle>
+                    <Path
+                      fill="#FF6C00"
+                      fillRule="evenodd"
+                      d="M13 6h-1v6H6v1h6v6h1v-6h6v-1h-6V6z"
+                      clipRule="evenodd"
+                    ></Path>
+                  </Svg>
+                </View>
               </View>
-              <View>
-                <Text style={styles.text}>Enter your email</Text>
-                <TextInput
-                  style={styles.input}
-                  textAlign="center"
-                  value={email}
-                  onChangeText={setEmail}
-                  onFocus={() => setIsShownKeybord(true)}
-                ></TextInput>
-              </View>
-              <View style={{ marginTop: 10 }}>
-                <Text style={styles.text}>Enter your password</Text>
-                <TextInput
-                  style={styles.input}
-                  textAlign="center"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={true}
-                  onFocus={() => setIsShownKeybord(true)}
-                ></TextInput>
-              </View>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.button}
-                onPress={onSubmit}
-              >
-                <Text style={styles.textButton}>Log in</Text>
-              </TouchableOpacity>
             </View>
-          </KeyboardAvoidingView>
+            <KeyboardAvoidingView behavior={Platform.OS === "ios" && "padding"}>
+              <View
+                style={{
+                  ...styles.form,
+                  marginBottom: isShownKeybord ? 32 : 78,
+                }}
+              >
+                <View style={styles.header}>
+                  <Text style={styles.headerTitle}>Registration</Text>
+                </View>
+                <View style={{ marginBottom: 16 }}>
+                  <TextInput
+                    style={styles.input}
+                    textAlign="center"
+                    value={login}
+                    onChangeText={setLogin}
+                    onFocus={() => setIsShownKeybord(true)}
+                    placeholder="Login"
+                    placeholderTextColor="#fff"
+                  ></TextInput>
+                </View>
+                <View style={{ marginBottom: 16 }}>
+                  <TextInput
+                    style={styles.input}
+                    textAlign="center"
+                    value={email}
+                    onChangeText={setEmail}
+                    onFocus={() => setIsShownKeybord(true)}
+                    placeholder="Email"
+                    placeholderTextColor="#fff"
+                  ></TextInput>
+                </View>
+                <View style={{ marginBottom: isShownKeybord ? 0 : 43 }}>
+                  <TextInput
+                    style={styles.input}
+                    textAlign="center"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={true}
+                    onFocus={() => setIsShownKeybord(true)}
+                    placeholder="Password"
+                    placeholderTextColor="#fff"
+                  ></TextInput>
+                </View>
+                <View style={{ display: isShownKeybord ? "none" : "flex" }}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={styles.button}
+                    onPress={onSubmit}
+                  >
+                    <Text style={styles.textButton}>Registration</Text>
+                  </TouchableOpacity>
+                  <View style={styles.enterAccountView}>
+                    <Text style={styles.enterAccountText}>
+                      Do you have an account? Enter
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </KeyboardAvoidingView>
+          </View>
         </ImageBackground>
       </View>
     </TouchableWithoutFeedback>
@@ -137,8 +183,12 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     resizeMode: "cover",
   },
-  form: {
-    marginHorizontal: 70,
+  form: { marginHorizontal: 16 },
+  formBackdrop: {
+    backgroundColor: "#2c3639",
+    justifyContent: "flex-end",
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
   },
   input: {
     color: "#fff",
@@ -147,26 +197,53 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
     borderWidth: 1,
     height: 40,
+    fontFamily: "DMMono-Regular",
   },
   button: {
-    marginTop: 20,
     backgroundColor: "#fff",
-    height: 40,
-    borderRadius: 5,
+    height: 51,
+    borderRadius: 100,
     justifyContent: "center",
+    marginBottom: 16,
   },
   textButton: {
     color: "#000",
     textAlign: "center",
     fontFamily: "DMMono-Regular",
+    fontSize: 16,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 33,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 30,
     textAlign: "center",
     color: "#fff",
     fontFamily: "DMMono-Medium",
+  },
+  avatarBox: {
+    height: 120,
+    width: 120,
+    borderRadius: 16,
+    backgroundColor: "#2c3639",
+    borderColor: "#fff",
+    borderWidth: 1,
+  },
+  centerBox: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: -60,
+    alignItems: "center",
+  },
+  enterAccountText: {
+    color: "#fff",
+    fontFamily: "DMMono-Medium",
+    textAlign: "center",
+  },
+  addIconBox: {
+    position: "absolute",
+    right: -13,
+    bottom: 14,
   },
 });
