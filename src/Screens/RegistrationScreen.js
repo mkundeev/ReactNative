@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
-import * as Font from "expo-font";
+import { useState } from "react";
+
 import Svg, { Circle, Path } from "react-native-svg";
-import * as SplashScreen from "expo-splash-screen";
+
 import {
   StyleSheet,
   Text,
@@ -15,40 +15,12 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 
-export default function RegistrationScreen() {
+export default function RegistrationScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [login, setLogin] = useState("");
   const [isShownKeybord, setIsShownKeybord] = useState(false);
   const [isSecureTextEntry, IsSecureTextEntry] = useState(true);
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    async function prepare() {
-      try {
-        await Font.loadAsync({
-          "DMMono-Regular": require("./assets/fonts/DMMono-Regular.ttf"),
-          "DMMono-Medium": require("./assets/fonts/DMMono-Medium.ttf"),
-        });
-      } catch (e) {
-        console.warn(e);
-      } finally {
-        setIsReady(true);
-      }
-    }
-
-    prepare();
-  }, []);
-
-  const onLayoutRootView = useCallback(async () => {
-    if (isReady) {
-      await SplashScreen.hideAsync();
-    }
-  }, [isReady]);
-
-  if (!isReady) {
-    return null;
-  }
 
   const onKeyboradHide = () => {
     setIsShownKeybord(false);
@@ -62,9 +34,9 @@ export default function RegistrationScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={onKeyboradHide}>
-      <View style={styles.container} onLayout={onLayoutRootView}>
+      <View style={styles.container}>
         <ImageBackground
-          source={require("./src/img/background-img.jpg")}
+          source={require("../img/background-img.jpg")}
           style={styles.background}
         >
           <View
@@ -161,8 +133,13 @@ export default function RegistrationScreen() {
                   </TouchableOpacity>
                   <View style={styles.enterAccountView}>
                     <Text style={styles.enterAccountText}>
-                      Do you have an account? Enter
+                      Do you have an account?{" "}
                     </Text>
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate("Log In")}
+                    >
+                      <Text style={styles.enterAccountAccentText}>Enter</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               </View>
@@ -238,10 +215,18 @@ const styles = StyleSheet.create({
     top: -60,
     alignItems: "center",
   },
+  enterAccountView: {
+    flexDirection: "row",
+    justifyContent: "center",
+  },
   enterAccountText: {
     color: "#fff",
     fontFamily: "DMMono-Medium",
     textAlign: "center",
+  },
+  enterAccountAccentText: {
+    fontFamily: "DMMono-Medium",
+    color: "#FF6C00",
   },
   addIconBox: {
     position: "absolute",
@@ -252,7 +237,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 15,
     right: 16,
-    color: "#FF6C00",
   },
   text: {
     color: "#FF6C00",
