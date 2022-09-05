@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
 import * as Font from "expo-font";
 import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import LoginScreen from "./src/Screens/LoginScreen";
-import RegistrationScreen from "./src/Screens/RegistrationScreen";
+import AuthScreen from "./src/Screens/AuthScreens/AuthScreen";
+import Home from "./src/Screens/MainScreens/Home";
 
-const AuthStack = createNativeStackNavigator();
 export default function App() {
   const [isReady, setIsReady] = useState(false);
 
@@ -31,18 +29,7 @@ export default function App() {
       {isReady && (
         <>
           <NavigationContainer>
-            <AuthStack.Navigator>
-              <AuthStack.Screen
-                options={{ headerShown: false }}
-                name="Log In"
-                component={LoginScreen}
-              />
-              <AuthStack.Screen
-                options={{ headerShown: false }}
-                name="Registration"
-                component={RegistrationScreen}
-              />
-            </AuthStack.Navigator>
+            <AuthScreen />
           </NavigationContainer>
         </>
       )}

@@ -30,13 +30,14 @@ export default function RegistrationScreen({ navigation }) {
     onKeyboradHide();
     setEmail("");
     setPassword("");
+    navigation.navigate("Home");
   };
 
   return (
     <TouchableWithoutFeedback onPress={onKeyboradHide}>
       <View style={styles.container}>
         <ImageBackground
-          source={require("../img/background-img.jpg")}
+          source={require("../../img/background-img.jpg")}
           style={styles.background}
         >
           <View
