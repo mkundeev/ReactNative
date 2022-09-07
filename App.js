@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { Provider } from "react-redux";
 import * as Font from "expo-font";
 import { NavigationContainer } from "@react-navigation/native";
 import AuthScreen from "./src/Screens/AuthScreens/AuthScreen";
-import Home from "./src/Screens/MainScreens/Home";
+import { store } from "./src/redux/store";
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
@@ -27,11 +28,11 @@ export default function App() {
   return (
     <>
       {isReady && (
-        <>
+        <Provider store={}>
           <NavigationContainer>
             <AuthScreen />
           </NavigationContainer>
-        </>
+        </Provider>
       )}
     </>
   );

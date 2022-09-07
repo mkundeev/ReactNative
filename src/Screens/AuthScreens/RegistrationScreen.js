@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Svg, { Circle, Path } from "react-native-svg";
 
@@ -33,6 +33,16 @@ export default function RegistrationScreen({ navigation }) {
     navigation.navigate("Home");
   };
 
+  useEffect(() => {
+    const hideKeybord = Keyboard.addListener("keyboardDidHide", () => {
+      setIsShownKeybord(false);
+    });
+
+    return () => {
+      hideKeybord.remove();
+    };
+  }, []);
+
   return (
     <TouchableWithoutFeedback onPress={onKeyboradHide}>
       <View style={styles.container}>
@@ -40,40 +50,41 @@ export default function RegistrationScreen({ navigation }) {
           source={require("../../img/background-img.jpg")}
           style={styles.background}
         >
-          <View
-            style={{
-              ...styles.formBackdrop,
-              height: isShownKeybord ? 374 : 549,
-            }}
-          >
-            <View style={styles.centerBox}>
-              <View style={styles.avatarBox}>
-                <View style={styles.addIconBox}>
-                  <Svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="25"
-                    height="25"
-                    fill="none"
-                    viewBox="0 0 25 25"
-                  >
-                    <Circle
-                      cx="12.5"
-                      cy="12.5"
-                      r="12"
+          <KeyboardAvoidingView behavior={Platform.OS === "ios" && "padding"}>
+            <View
+              style={{
+                ...styles.formBackdrop,
+                height: isShownKeybord ? 374 : 549,
+              }}
+            >
+              <View style={styles.centerBox}>
+                <View style={styles.avatarBox}>
+                  <View style={styles.addIconBox}>
+                    <Svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="25"
+                      height="25"
                       fill="none"
-                      stroke="#FF6C00"
-                    ></Circle>
-                    <Path
-                      fill="#FF6C00"
-                      fillRule="evenodd"
-                      d="M13 6h-1v6H6v1h6v6h1v-6h6v-1h-6V6z"
-                      clipRule="evenodd"
-                    ></Path>
-                  </Svg>
+                      viewBox="0 0 25 25"
+                    >
+                      <Circle
+                        cx="12.5"
+                        cy="12.5"
+                        r="12"
+                        fill="none"
+                        stroke="#FF6C00"
+                      ></Circle>
+                      <Path
+                        fill="#FF6C00"
+                        fillRule="evenodd"
+                        d="M13 6h-1v6H6v1h6v6h1v-6h6v-1h-6V6z"
+                        clipRule="evenodd"
+                      ></Path>
+                    </Svg>
+                  </View>
                 </View>
               </View>
-            </View>
-            <KeyboardAvoidingView behavior={Platform.OS === "ios" && "padding"}>
+
               <View
                 style={{
                   ...styles.form,
@@ -144,8 +155,8 @@ export default function RegistrationScreen({ navigation }) {
                   </View>
                 </View>
               </View>
-            </KeyboardAvoidingView>
-          </View>
+            </View>
+          </KeyboardAvoidingView>
         </ImageBackground>
       </View>
     </TouchableWithoutFeedback>
@@ -205,7 +216,7 @@ const styles = StyleSheet.create({
     height: 120,
     width: 120,
     borderRadius: 16,
-    backgroundColor: "#2c3639",
+    backgroundColor: "#515151",
     borderColor: "#fff",
     borderWidth: 1,
   },

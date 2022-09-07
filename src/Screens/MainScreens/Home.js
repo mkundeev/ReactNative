@@ -1,10 +1,10 @@
 import React from "react";
-import PostsScreen from "./PostsScreen";
 import CreatePostsScreen from "./CreatePostsScreen";
 import ProfileScreen from "./ProfileScreen";
+import PostsStackScreen from "../PostsScreen/PostsStack";
 import { FontAwesome } from "@expo/vector-icons";
 import { AntDesign } from "@expo/vector-icons";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { TouchableOpacity, StyleSheet } from "react-native";
 
@@ -23,6 +23,7 @@ export default function Home({ navigation }) {
     >
       <HomeStack.Screen
         options={{
+          headerShown: false,
           tabBarIcon: ({ focused }) => (
             <AntDesign
               name="appstore-o"
@@ -30,22 +31,9 @@ export default function Home({ navigation }) {
               color={focused ? "#FF6C00" : "#fff"}
             />
           ),
-          headerRight: ({ pressColor }) => (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.logOut}
-              onPress={() => navigation.navigate("Log In")}
-            >
-              <MaterialCommunityIcons
-                name="logout"
-                size={24}
-                color={pressColor}
-              />
-            </TouchableOpacity>
-          ),
         }}
-        name="Posts"
-        component={PostsScreen}
+        name="PostsStackScreen"
+        component={PostsStackScreen}
       />
       <HomeStack.Screen
         options={{
@@ -56,6 +44,16 @@ export default function Home({ navigation }) {
               color={focused ? "#FF6C00" : "#fff"}
             />
           ),
+          headerLeft: ({ pressColor }) => (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.logOut}
+              onPress={() => navigation.navigate("Posts")}
+            >
+              <AntDesign name="arrowleft" size={24} color={pressColor} />
+            </TouchableOpacity>
+          ),
+          tabBarStyle: { display: "none" },
         }}
         name="CreatePosts"
         component={CreatePostsScreen}

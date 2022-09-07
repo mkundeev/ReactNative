@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -29,6 +29,16 @@ export default function LoginScreen({ navigation }) {
     navigation.navigate("Home");
   };
 
+  useEffect(() => {
+    const hideKeybord = Keyboard.addListener("keyboardDidHide", () => {
+      setIsShownKeybord(false);
+    });
+
+    return () => {
+      hideKeybord.remove();
+    };
+  }, []);
+
   return (
     <TouchableWithoutFeedback onPress={onKeyboradHide}>
       <View style={styles.container}>
@@ -36,14 +46,13 @@ export default function LoginScreen({ navigation }) {
           source={require("../../img/background-img.jpg")}
           style={styles.background}
         >
-          <View
-            style={{
-              ...styles.formBackdrop,
-              height: isShownKeybord ? 248 : 489,
-            }}
-          >
-            <View style={styles.centerBox}></View>
-            <KeyboardAvoidingView behavior={Platform.OS === "ios" && "padding"}>
+          <KeyboardAvoidingView behavior={Platform.OS === "ios" && "padding"}>
+            <View
+              style={{
+                ...styles.formBackdrop,
+                height: isShownKeybord ? 248 : 489,
+              }}
+            >
               <View
                 style={{
                   ...styles.form,
@@ -104,8 +113,8 @@ export default function LoginScreen({ navigation }) {
                   </View>
                 </View>
               </View>
-            </KeyboardAvoidingView>
-          </View>
+            </View>
+          </KeyboardAvoidingView>
         </ImageBackground>
       </View>
     </TouchableWithoutFeedback>
