@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { db } from "../../firebase/configFB";
+import { collection, addDoc, getDocs } from "firebase/firestore";
+import { useSelector } from "react-redux";
 import {
   View,
   Text,
@@ -15,14 +18,27 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 
 export default function CommentsScreen({ route }) {
+  const { photo, id } = route.params;
   const [isShownKeybord, setIsShownKeybord] = useState(false);
   const [comments, setComments] = useState([]);
   const [comment, setComment] = useState("");
-  const onKeyboradHide = () => {
-    setIsShownKeybord(false);
-    Keyboard.dismiss();
+
+  const { userId, login, avatar } = useSelector((state) => state.auth);
+
+  const getAllComments = async () => {
+    const querySnapshot = await getDocs(
+      collection(db, "posts", `${id}`, "comments")
+    );
+    let allComments = [];
+    querySnapshot.forEach((doc) => {
+      allComments.push({ ...doc.data(), id: doc.id });
+    });
+    setComments(allComments);
   };
+
   useEffect(() => {
+    getAllComments();
+
     const hideKeybord = Keyboard.addListener("keyboardDidHide", () => {
       setIsShownKeybord(false);
     });
@@ -30,10 +46,30 @@ export default function CommentsScreen({ route }) {
     return () => {
       hideKeybord.remove();
     };
-  }, []);
+  }, [comment]);
 
-  const addComment = () => {
-    setComments((prevState) => [comment, ...prevState]);
+  const onKeyboradHide = () => {
+    setIsShownKeybord(false);
+    Keyboard.dismiss();
+  };
+
+  const addComment = async () => {
+    try {
+      let date = new Date();
+      date = date.toISOString();
+      const docRef = await addDoc(
+        collection(db, "posts", `${id}`, "comments"),
+        {
+          comment,
+          login,
+          userId,
+          date,
+          avatar,
+        }
+      );
+    } catch (e) {
+      console.error("Error adding document: ", e);
+    }
     setComment("");
     onKeyboradHide();
   };
@@ -48,36 +84,55 @@ export default function CommentsScreen({ route }) {
             flex: 1,
           }}
         >
-          <View>
-            <Image
-              source={{ uri: route.params }}
-              style={{ height: 240, borderRadius: 16, marginBottom: 32 }}
-            ></Image>
+          <Image
+            source={{ uri: photo }}
+            style={{ height: 240, borderRadius: 16, marginBottom: 32 }}
+          ></Image>
+          <View style={{ flex: 1, marginBottom: 10 }}>
             <FlatList
               data={comments}
-              keyExtractor={(item, index) => index.toString()}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={true}
               renderItem={({ item }) => (
-                <View style={styles.commentBox}>
+                <View
+                  style={{
+                    ...styles.commentBox,
+                    flexDirection:
+                      item.userId === userId ? "row" : "row-reverse",
+                  }}
+                >
                   <View style={styles.comment}>
-                    <Text style={styles.text}>{item}</Text>
+                    <Text style={styles.text}>{item?.comment}</Text>
+                    <Text style={styles.textDate}>{item?.date}</Text>
                   </View>
-                  <View style={styles.avatar}></View>
+                  <Image
+                    source={{ uri: item.avatar }}
+                    style={{
+                      ...styles.avatar,
+                      marginLeft: item.userId === userId ? 16 : 0,
+                      marginRight: item.userId === userId ? 0 : 16,
+                    }}
+                  ></Image>
                 </View>
               )}
             ></FlatList>
           </View>
+
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" && "position"}
             keyboardVerticalOffset={100}
           >
             <View style={{ marginBottom: 32 }}>
               <TextInput
-                style={styles.input}
+                style={{ ...styles.input, height: !isShownKeybord ? 40 : 120 }}
                 placeholder="Add comment..."
                 placeholderTextColor="#fff"
                 onFocus={() => setIsShownKeybord(true)}
                 onChangeText={setComment}
                 value={comment}
+                multiline={true}
+                textAlignVertical="top"
+                numberOfLines={3}
               ></TextInput>
               <TouchableOpacity style={styles.button} onPress={addComment}>
                 <AntDesign name="arrowup" size={24} color="#fff" />
@@ -100,14 +155,20 @@ const styles = StyleSheet.create({
     fontFamily: "DMMono-Regular",
     padding: 6,
   },
+  textDate: {
+    fontFamily: "DMMono-Regular",
+    textAlign: "right",
+    fontSize: 11,
+    paddingRight: 6,
+  },
   input: {
-    paddingLeft: 10,
+    padding: 15,
     backgroundColor: "#515151",
     borderWidth: 1,
     borderColor: "#fff",
-    borderRadius: 40,
-    height: 40,
+    borderRadius: 20,
     color: "#fff",
+    paddingEnd: 40,
   },
   button: {
     position: "absolute",
@@ -122,6 +183,7 @@ const styles = StyleSheet.create({
   },
   commentBox: {
     flexDirection: "row",
+    marginBottom: 10,
   },
   comment: {
     backgroundColor: "#515151",
@@ -133,6 +195,5 @@ const styles = StyleSheet.create({
     width: 28,
     backgroundColor: "#515151",
     borderRadius: 28,
-    marginLeft: 16,
   },
 });

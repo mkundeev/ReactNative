@@ -6,9 +6,12 @@ import PostsScreen from "./PostsScreen";
 import CommentsScreen from "./CommentsScreen";
 import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { authSignOutUser } from "../../redux/authOperations";
+import { useDispatch } from "react-redux";
 
 const PostsStack = createNativeStackNavigator();
 export default function PostsStackScreen({ navigation }) {
+  const dispatch = useDispatch();
   return (
     <PostsStack.Navigator
       screenOptions={{
@@ -19,11 +22,11 @@ export default function PostsStackScreen({ navigation }) {
     >
       <PostsStack.Screen
         options={{
-          headerRight: ({ pressColor }) => (
+          headerRight: () => (
             <TouchableOpacity
               activeOpacity={0.8}
               style={styles.logOut}
-              onPress={() => navigation.navigate("Log In")}
+              onPress={() => dispatch(authSignOutUser())}
             >
               <MaterialCommunityIcons name="logout" size={24} color="#FF6C00" />
             </TouchableOpacity>

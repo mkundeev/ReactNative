@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
 import { Camera } from "expo-camera";
+import { storage, db } from "../../firebase/configFB";
+import { collection, addDoc } from "firebase/firestore";
+import { useSelector } from "react-redux";
+import { ref, uploadBytes } from "firebase/storage";
+import uuid from "react-native-uuid";
 import * as Location from "expo-location";
 import {
   View,
@@ -24,31 +29,8 @@ export default function CreatePostsScreen({ navigation }) {
   const [locationName, setLocationName] = useState("");
   const [location, setLocation] = useState("");
 
-  const takePhoto = async () => {
-    if (!snap) {
-      console.log("error");
-      return;
-    }
-    try {
-      const { status } = await Camera.getCameraPermissionsAsync();
-      if (status !== "granted") {
-        setErrorMsg("Permission to access camera was denied");
-        return;
-      }
-      let { status: statusLocation } =
-        await Location.requestForegroundPermissionsAsync();
-      if (statusLocation !== "granted") {
-        setErrorMsg("Permission to access location was denied");
-        return;
-      }
-      const photo = await snap.takePictureAsync();
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
-      setPhoto(photo.uri);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  const { userId, login } = useSelector((state) => state.auth);
+
   useEffect(() => {
     const hideKeybord = Keyboard.addListener("keyboardDidHide", () => {
       setIsShownKeybord(false);
@@ -57,25 +39,73 @@ export default function CreatePostsScreen({ navigation }) {
       hideKeybord.remove();
     };
   }, []);
+  const takePhoto = async () => {
+    if (!snap) {
+      console.log("error");
+      return;
+    }
+    try {
+      const { status } = await Camera.getCameraPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Permission to access camera was denied");
+        return;
+      }
+      let { status: statusLocation } =
+        await Location.requestForegroundPermissionsAsync();
+      if (statusLocation !== "granted") {
+        console.log("Permission to access location was denied");
+        return;
+      }
+      const photo = await snap.takePictureAsync();
+      let location = await Location.getCurrentPositionAsync({});
+      setLocation(location);
+      setPhoto(photo.uri);
+    } catch (err) {
+      console.log(err.message);
+    }
+  };
+  const uploadePhotoToServer = async () => {
+    const response = await fetch(photo);
+    const file = await response.blob();
+    const postId = uuid.v4();
+    const storageRef = ref(storage, `posts/${postId}`);
+    await uploadBytes(storageRef, file);
+    const pathReference = ref(storage, `posts/${postId}`);
+
+    setPhoto(pathReference);
+  };
+  const createPost = async () => {
+    await uploadePhotoToServer();
+    try {
+      const docRef = await addDoc(collection(db, "posts"), {
+        photo,
+        name: photoName,
+        locationName,
+        location,
+        userId,
+        login,
+      });
+    } catch (e) {
+      console.error("Error adding document: ", e);
+    }
+  };
 
   const onKeyboradHide = () => {
     setIsShownKeybord(false);
     Keyboard.dismiss();
   };
-
-  const onSubmit = () => {
-    console.log(photo, photoName, location);
+  const reset = () => {
     setPhoto("");
     setLocationName("");
     setPhotoName("");
     setLocation("");
-    navigation.navigate("Posts", {
-      photo,
-      name: photoName,
-      locationName,
-      location,
-    });
   };
+  const onSubmit = async () => {
+    await createPost();
+    reset();
+    navigation.navigate("Posts");
+  };
+
   return (
     <TouchableWithoutFeedback onPress={onKeyboradHide}>
       <View
@@ -165,7 +195,7 @@ export default function CreatePostsScreen({ navigation }) {
             display: isShownKeybord ? "none" : "flex",
           }}
         >
-          <TouchableOpacity style={styles.deletButton}>
+          <TouchableOpacity style={styles.deletButton} onPress={reset}>
             <AntDesign name="delete" size={24} color="#515151" />
           </TouchableOpacity>
         </View>
@@ -176,7 +206,6 @@ export default function CreatePostsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "space-between",
     backgroundColor: "#121212",
   },
   form: {

@@ -28,7 +28,7 @@ export default function App() {
   return (
     <>
       {isReady && (
-        <Provider store={}>
+        <Provider store={store}>
           <NavigationContainer>
             <AuthScreen />
           </NavigationContainer>

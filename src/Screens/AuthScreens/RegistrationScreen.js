@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
-
+import * as ImagePicker from "expo-image-picker";
+import { storage } from "../../firebase/configFB";
+import { authSlice } from "../../redux/authReducer";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Svg, { Circle, Path } from "react-native-svg";
 
 import {
   StyleSheet,
+  Image,
   Text,
   View,
   TextInput,
@@ -14,23 +18,66 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
 } from "react-native";
-
+import { authSignUpUser, updateAvatar } from "../../redux/authOperations";
+import { useDispatch } from "react-redux";
 export default function RegistrationScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [login, setLogin] = useState("");
   const [isShownKeybord, setIsShownKeybord] = useState(false);
   const [isSecureTextEntry, IsSecureTextEntry] = useState(true);
+  const [avatar, setAvatar] = useState(null);
+
+  const dispatch = useDispatch();
+
+  const uploadePhotoToServer = async (avatarId) => {
+    try {
+      const response = await fetch(avatar);
+      const file = await response.blob();
+      const storageRef = ref(storage, `avatars/${avatarId}`);
+      await uploadBytes(storageRef, file);
+      const path = await getDownloadURL(ref(storage, `avatars/${avatarId}`));
+      setAvatar(path);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const onKeyboradHide = () => {
     setIsShownKeybord(false);
     Keyboard.dismiss();
   };
-  const onSubmit = () => {
+  const onSubmit = async () => {
+    const updatedUser = await authSignUpUser({
+      email,
+      password,
+      login,
+    });
+    await uploadePhotoToServer(updatedUser.uid);
+    dispatch(updateAvatar(avatar));
+    dispatch(
+      authSlice.actions.updateProfile({
+        userId: updatedUser.uid,
+        login: updatedUser.displayName,
+        email: updatedUser.email,
+      })
+    );
     onKeyboradHide();
     setEmail("");
     setPassword("");
-    navigation.navigate("Home");
+    setLogin("");
+  };
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.cancelled) {
+      setAvatar(result.uri);
+    }
   };
 
   useEffect(() => {
@@ -59,7 +106,14 @@ export default function RegistrationScreen({ navigation }) {
             >
               <View style={styles.centerBox}>
                 <View style={styles.avatarBox}>
-                  <View style={styles.addIconBox}>
+                  <Image
+                    style={{ height: "100%", width: "100%", borderRadius: 16 }}
+                    source={{ uri: avatar }}
+                  ></Image>
+                  <TouchableOpacity
+                    style={styles.addIconBox}
+                    onPress={pickImage}
+                  >
                     <Svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="25"
@@ -81,7 +135,7 @@ export default function RegistrationScreen({ navigation }) {
                         clipRule="evenodd"
                       ></Path>
                     </Svg>
-                  </View>
+                  </TouchableOpacity>
                 </View>
               </View>
 

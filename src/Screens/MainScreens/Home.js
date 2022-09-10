@@ -60,6 +60,7 @@ export default function Home({ navigation }) {
       />
       <HomeStack.Screen
         options={{
+          headerShown: false,
           tabBarIcon: ({ focused }) => (
             <AntDesign
               name="user"

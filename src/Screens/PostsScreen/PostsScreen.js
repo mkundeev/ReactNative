@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { db } from "../../firebase/configFB";
+import { collection, getDocs } from "firebase/firestore";
 import {
   View,
   Text,
@@ -10,31 +13,57 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { EvilIcons } from "@expo/vector-icons";
 
-export default function PostsScreen({ route, navigation }) {
+export default function PostsScreen({ navigation }) {
   const [posts, setPosts] = useState([]);
+  const { email, login, avatar } = useSelector((state) => state.auth);
+
+  const getAllPosts = async () => {
+    const querySnapshot = await getDocs(collection(db, "posts"));
+    let newPosts = [];
+    querySnapshot.forEach((doc) => {
+      newPosts.push({ ...doc.data(), id: doc.id });
+    });
+    setPosts(newPosts);
+  };
+
   useEffect(() => {
-    if (route.params) setPosts((prevState) => [route.params, ...prevState]);
-  }, [route.params]);
+    const unsubscribe = navigation.addListener("focus", () => {
+      getAllPosts();
+      return unsubscribe;
+      r;
+    });
+  }, [navigation]);
   return (
     <View style={styles.container}>
       <View style={{ marginHorizontal: 16, marginTop: 32 }}>
         <View style={styles.userBox}>
-          <View
-            style={{
-              height: 60,
-              width: 60,
-              borderRadius: 16,
-              backgroundColor: "#515151",
-            }}
-          ></View>
+          {avatar ? (
+            <Image
+              source={{ uri: avatar }}
+              style={{
+                height: 60,
+                width: 60,
+                borderRadius: 16,
+              }}
+            ></Image>
+          ) : (
+            <View
+              style={{
+                height: 60,
+                width: 60,
+                borderRadius: 16,
+                backgroundColor: "#515151",
+              }}
+            ></View>
+          )}
           <View style={{ marginLeft: 8 }}>
-            <Text style={styles.textName}>Login</Text>
-            <Text style={styles.textEmail}>Email@email.com</Text>
+            <Text style={styles.textName}>{login}</Text>
+            <Text style={styles.textEmail}>{email}</Text>
           </View>
         </View>
         <FlatList
           data={posts}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.postBox}>
               <Image
@@ -47,7 +76,12 @@ export default function PostsScreen({ route, navigation }) {
               <View style={styles.postInfoBox}>
                 <View style={styles.comentsInfo}>
                   <TouchableOpacity
-                    onPress={() => navigation.navigate("Comments", item.photo)}
+                    onPress={async () =>
+                      navigation.navigate("Comments", {
+                        photo: item.photo,
+                        id: item.id,
+                      })
+                    }
                   >
                     <EvilIcons name="comment" size={24} color="#fff" />
                   </TouchableOpacity>
