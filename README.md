@@ -1,4 +1,4 @@
 # ReactNative
 
-![img](Без имени-1.png)
+![img](my-image.jpg)
 
