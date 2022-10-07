@@ -26,10 +26,9 @@ export default function LoginScreen({ navigation }) {
     setIsShownKeybord(false);
     Keyboard.dismiss();
   };
-  const onSubmit = (e) => {
-    e.preventDefault();
+  const onSubmit = async () => {
     onKeyboradHide();
-    dispatch(authSignInUser({ email, password }));
+    await dispatch(authSignInUser({ email, password }));
     setEmail("");
     setPassword("");
   };
@@ -75,6 +74,7 @@ export default function LoginScreen({ navigation }) {
                     onFocus={() => setIsShownKeybord(true)}
                     placeholder="Email"
                     placeholderTextColor="#fff"
+                    keyboardType="email-address"
                   ></TextInput>
                 </View>
                 <View style={{ marginBottom: isShownKeybord ? 0 : 43 }}>

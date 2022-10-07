@@ -170,6 +170,7 @@ export default function RegistrationScreen({ navigation }) {
                     onFocus={() => setIsShownKeybord(true)}
                     placeholder="Email"
                     placeholderTextColor="#fff"
+                    keyboardType="email-address"
                   ></TextInput>
                 </View>
                 <View style={{ marginBottom: isShownKeybord ? 0 : 43 }}>
