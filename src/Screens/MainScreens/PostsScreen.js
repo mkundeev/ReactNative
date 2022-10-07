@@ -1,7 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { pathSlice } from "../../redux/pathReducer";
 import { db } from "../../firebase/configFB";
-import { collection, getDocs } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  getDoc,
+  arrayUnion,
+  arrayRemove,
+  doc,
+  updateDoc,
+  onSnapshot,
+} from "firebase/firestore";
 import {
   View,
   Text,
@@ -12,10 +22,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { EvilIcons } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
 
-export default function PostsScreen({ navigation }) {
+export default function PostsScreen({ navigation, route }) {
   const [posts, setPosts] = useState([]);
-  const { email, login, avatar } = useSelector((state) => state.auth);
+  const { email, login, avatar, userId } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
 
   const getAllPosts = async () => {
     const querySnapshot = await getDocs(collection(db, "posts"));
@@ -26,17 +38,44 @@ export default function PostsScreen({ navigation }) {
     setPosts(newPosts);
   };
 
+  const addLike = async (id) => {
+    const result = await getDoc(doc(db, "posts", `${id}`));
+    if (result.data().likes.includes(`${userId}`)) {
+      await updateDoc(doc(db, "posts", `${id}`), {
+        likes: arrayRemove(`${userId}`),
+      });
+    } else {
+      await updateDoc(doc(db, "posts", `${id}`), {
+        likes: arrayUnion(`${userId}`),
+      });
+    }
+  };
+
   useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", () => {
-      getAllPosts();
-      return unsubscribe;
-      r;
-    });
-  }, [navigation]);
+    const unsubscribe = onSnapshot(
+      collection(db, "posts"),
+      (snapshot) => {
+        getAllPosts();
+      },
+      (error) => {
+        console.log(error);
+      }
+    );
+    return () => unsubscribe();
+  }, []);
   return (
     <View style={styles.container}>
-      <View style={{ marginHorizontal: 16, marginTop: 32 }}>
-        <View style={styles.userBox}>
+      <View
+        style={{
+          marginHorizontal: 16,
+          marginTop: 32,
+          marginBottom: 70,
+        }}
+      >
+        <TouchableOpacity
+          style={styles.userBox}
+          onPress={() => navigation.navigate("Profile")}
+        >
           {avatar ? (
             <Image
               source={{ uri: avatar }}
@@ -60,7 +99,7 @@ export default function PostsScreen({ navigation }) {
             <Text style={styles.textName}>{login}</Text>
             <Text style={styles.textEmail}>{email}</Text>
           </View>
-        </View>
+        </TouchableOpacity>
         <FlatList
           data={posts}
           keyExtractor={(item) => item.id}
@@ -76,27 +115,42 @@ export default function PostsScreen({ navigation }) {
               <View style={styles.postInfoBox}>
                 <View style={styles.comentsInfo}>
                   <TouchableOpacity
-                    onPress={async () =>
+                    onPress={async () => {
                       navigation.navigate("Comments", {
                         photo: item.photo,
                         id: item.id,
-                      })
-                    }
+                      });
+                      dispatch(pathSlice.actions.setPath({ path: route.name }));
+                    }}
                   >
                     <EvilIcons name="comment" size={24} color="#fff" />
                   </TouchableOpacity>
-                  <Text style={styles.textPost}>0</Text>
+                  <Text style={styles.textPost}> {item.comments || 0}</Text>
+                </View>
+                <View style={styles.comentsInfo}>
+                  <TouchableOpacity onPress={() => addLike(item.id)}>
+                    {item.likes.includes(`${userId}`) ? (
+                      <AntDesign name="like1" size={24} color="#fff" />
+                    ) : (
+                      <AntDesign name="like2" size={24} color="#fff" />
+                    )}
+                  </TouchableOpacity>
+                  <Text style={styles.textPost}>
+                    {" "}
+                    {item.likes?.length || 0}
+                  </Text>
                 </View>
                 <View style={styles.locationInfo}>
                   <Ionicons name="location-outline" size={20} color="#fff" />
                   <Text
                     style={styles.textLocation}
-                    onPress={() =>
+                    onPress={() => {
                       navigation.navigate("Map", {
                         location: item.location,
                         title: item.locationName,
-                      })
-                    }
+                      });
+                      dispatch(pathSlice.actions.setPath({ path: route.name }));
+                    }}
                   >
                     {item.locationName}
                   </Text>

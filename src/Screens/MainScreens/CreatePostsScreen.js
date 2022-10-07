@@ -3,9 +3,10 @@ import { Camera } from "expo-camera";
 import { storage, db } from "../../firebase/configFB";
 import { collection, addDoc } from "firebase/firestore";
 import { useSelector } from "react-redux";
-import { ref, uploadBytes } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import uuid from "react-native-uuid";
 import * as Location from "expo-location";
+import * as ImagePicker from "expo-image-picker";
 import {
   View,
   Text,
@@ -16,6 +17,8 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Image,
+  ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,10 +27,10 @@ import { AntDesign } from "@expo/vector-icons";
 export default function CreatePostsScreen({ navigation }) {
   const [isShownKeybord, setIsShownKeybord] = useState(false);
   const [snap, setSnap] = useState(null);
-  const [photo, setPhoto] = useState("");
+  const [photoPath, setPhotoPath] = useState("");
   const [photoName, setPhotoName] = useState("");
   const [locationName, setLocationName] = useState("");
-  const [location, setLocation] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const { userId, login } = useSelector((state) => state.auth);
 
@@ -39,6 +42,7 @@ export default function CreatePostsScreen({ navigation }) {
       hideKeybord.remove();
     };
   }, []);
+
   const takePhoto = async () => {
     if (!snap) {
       console.log("error");
@@ -50,40 +54,60 @@ export default function CreatePostsScreen({ navigation }) {
         console.log("Permission to access camera was denied");
         return;
       }
-      let { status: statusLocation } =
-        await Location.requestForegroundPermissionsAsync();
-      if (statusLocation !== "granted") {
-        console.log("Permission to access location was denied");
-        return;
-      }
       const photo = await snap.takePictureAsync();
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
-      setPhoto(photo.uri);
+
+      setPhotoPath(photo.uri);
     } catch (err) {
       console.log(err.message);
     }
   };
-  const uploadePhotoToServer = async () => {
-    const response = await fetch(photo);
-    const file = await response.blob();
-    const postId = uuid.v4();
-    const storageRef = ref(storage, `posts/${postId}`);
-    await uploadBytes(storageRef, file);
-    const pathReference = ref(storage, `posts/${postId}`);
 
-    setPhoto(pathReference);
+  const uploadePhoto = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.cancelled) {
+      setPhotoPath(result.uri);
+    }
   };
-  const createPost = async () => {
-    await uploadePhotoToServer();
+
+  const uploadePhotoToServer = async () => {
     try {
-      const docRef = await addDoc(collection(db, "posts"), {
+      const postId = uuid.v4().split("-").join("");
+      const response = await fetch(photoPath);
+      const file = await response.blob();
+      const storageRef = await ref(storage, `posts/${postId}`);
+      await uploadBytesResumable(storageRef, file);
+      const photo = await getDownloadURL(storageRef);
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Permission to access location was denied");
+        return;
+      }
+      const location = await Location.getCurrentPositionAsync({});
+
+      return { photo, location };
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const createPost = async () => {
+    try {
+      const { photo, location } = await uploadePhotoToServer();
+      await addDoc(collection(db, "posts"), {
         photo,
         name: photoName,
         locationName,
         location,
         userId,
         login,
+        comments: 0,
+        likes: [],
       });
     } catch (e) {
       console.error("Error adding document: ", e);
@@ -95,15 +119,20 @@ export default function CreatePostsScreen({ navigation }) {
     Keyboard.dismiss();
   };
   const reset = () => {
-    setPhoto("");
     setLocationName("");
     setPhotoName("");
-    setLocation("");
+    setPhotoPath("");
   };
   const onSubmit = async () => {
-    await createPost();
-    reset();
-    navigation.navigate("Posts");
+    try {
+      setLoading(true);
+      await createPost();
+      reset();
+      setLoading(false);
+      navigation.navigate("Posts");
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   return (
@@ -130,11 +159,17 @@ export default function CreatePostsScreen({ navigation }) {
                     color="#121212"
                   />
                 </TouchableOpacity>
+                {photoPath && (
+                  <Image
+                    source={{ uri: photoPath }}
+                    style={styles.sampleImg}
+                  ></Image>
+                )}
               </Camera>
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.addPhoto}
-                onPress={() => {}}
+                onPress={() => uploadePhoto()}
               >
                 <Text style={styles.upLoadPhotoText}>Upload photo</Text>
               </TouchableOpacity>
@@ -170,21 +205,29 @@ export default function CreatePostsScreen({ navigation }) {
                 style={{
                   ...styles.button,
                   display: isShownKeybord ? "none" : "flex",
-                  backgroundColor: !(photo && photoName && location)
+                  backgroundColor: !(photoPath && photoName && locationName)
                     ? "#515151"
                     : "#fff",
                 }}
-                disabled={!(photo && photoName && location)}
+                disabled={!(photoPath && photoName && locationName) || loading}
                 onPress={onSubmit}
               >
-                <Text
-                  style={{
-                    ...styles.textButton,
-                    color: !(photo && photoName && location) ? "#fff" : "#000",
-                  }}
-                >
-                  Post
-                </Text>
+                <View style={styles.textButton}>
+                  {loading ? (
+                    <ActivityIndicator />
+                  ) : (
+                    <Text
+                      style={{
+                        ...styles.btnText,
+                        color: !(photoPath && photoName && locationName)
+                          ? "#fff"
+                          : "#000",
+                      }}
+                    >
+                      Post
+                    </Text>
+                  )}
+                </View>
               </TouchableOpacity>
             </View>
           </View>
@@ -213,6 +256,7 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   addPhotoBox: {
+    position: "relative",
     height: 240,
     borderRadius: 8,
     backgroundColor: "#515151",
@@ -227,6 +271,14 @@ const styles = StyleSheet.create({
     position: "absolute",
     justifyContent: "center",
     alignItems: "center",
+  },
+  sampleImg: {
+    position: "absolute",
+    left: 0,
+    bottom: 0,
+    height: 80,
+    width: "33%",
+    zIndex: 1,
   },
   addPhoto: { marginTop: 8 },
   upLoadPhotoText: {
@@ -252,6 +304,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   textButton: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  btnText: {
     textAlign: "center",
     fontFamily: "DMMono-Regular",
     fontSize: 16,

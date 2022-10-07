@@ -26,12 +26,12 @@ export default function LoginScreen({ navigation }) {
     setIsShownKeybord(false);
     Keyboard.dismiss();
   };
-  const onSubmit = () => {
+  const onSubmit = (e) => {
+    e.preventDefault();
     onKeyboradHide();
     dispatch(authSignInUser({ email, password }));
     setEmail("");
     setPassword("");
-    // navigation.navigate("Home");
   };
 
   useEffect(() => {

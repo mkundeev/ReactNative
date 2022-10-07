@@ -1,15 +1,20 @@
 import React from "react";
 import CreatePostsScreen from "./CreatePostsScreen";
 import ProfileScreen from "./ProfileScreen";
-import PostsStackScreen from "../PostsScreen/PostsStack";
+import MapScreen from "./MapScreen";
+import CommentsScreen from "./CommentsScreen";
+import PostsScreen from "./PostsScreen";
 import { FontAwesome } from "@expo/vector-icons";
 import { AntDesign } from "@expo/vector-icons";
+import { useSelector } from "react-redux";
 
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { TouchableOpacity, StyleSheet } from "react-native";
 
 const HomeStack = createBottomTabNavigator();
 export default function Home({ navigation }) {
+  const { path } = useSelector((state) => state.path);
+
   return (
     <HomeStack.Navigator
       screenOptions={{
@@ -32,8 +37,8 @@ export default function Home({ navigation }) {
             />
           ),
         }}
-        name="PostsStackScreen"
-        component={PostsStackScreen}
+        name="Posts"
+        component={PostsScreen}
       />
       <HomeStack.Screen
         options={{
@@ -71,6 +76,46 @@ export default function Home({ navigation }) {
         }}
         name="Profile"
         component={ProfileScreen}
+      />
+      <HomeStack.Screen
+        options={{
+          headerLeft: () => (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.logOut}
+              onPress={() => {
+                path ? navigation.navigate(path) : navigation.navigate("Posts");
+              }}
+            >
+              <AntDesign name="arrowleft" size={24} color="#FF6C00" />
+            </TouchableOpacity>
+          ),
+          tabBarButton: () => null,
+          tabBarVisible: false,
+          tabBarStyle: { display: "none" },
+        }}
+        name="Map"
+        component={MapScreen}
+      />
+      <HomeStack.Screen
+        options={{
+          headerLeft: () => (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.logOut}
+              onPress={() => {
+                path ? navigation.navigate(path) : navigation.navigate("Posts");
+              }}
+            >
+              <AntDesign name="arrowleft" size={24} color="#FF6C00" />
+            </TouchableOpacity>
+          ),
+          tabBarButton: () => null,
+          tabBarVisible: false,
+          tabBarStyle: { display: "none" },
+        }}
+        name="Comments"
+        component={CommentsScreen}
       />
     </HomeStack.Navigator>
   );

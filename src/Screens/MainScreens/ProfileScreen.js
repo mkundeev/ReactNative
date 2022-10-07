@@ -7,9 +7,10 @@ import Svg, { Circle, Path } from "react-native-svg";
 import { useSelector, useDispatch } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
 import { EvilIcons } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { updateAvatar } from "../../redux/authOperations";
-import { authSignOutUser } from "../../redux/authOperations";
+import { updateAvatar, authSignOutUser } from "../../redux/authOperations";
+import { pathSlice } from "../../redux/pathReducer";
 
 import {
   StyleSheet,
@@ -19,41 +20,45 @@ import {
   ImageBackground,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 
-export default function RegistrationScreen({ navigation }) {
-  const [newAvatar, setNewAvatar] = useState(null);
+export default function RegistrationScreen({ navigation, route }) {
   const { userId, login, avatar } = useSelector((state) => state.auth);
   const [posts, setPosts] = useState([]);
-
+  const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
 
-  const uploadePhotoToServer = async () => {
+  const uploadePhotoToServer = async (avatar) => {
     try {
-      const response = await fetch(newAvatar);
+      const response = await fetch(avatar);
       const file = await response.blob();
-      console.log("file", file);
       const storageRef = ref(storage, `avatars/${userId}`);
       await uploadBytes(storageRef, file);
       const path = await getDownloadURL(ref(storage, `avatars/${userId}`));
-      setNewAvatar(path);
+      return path;
     } catch (error) {
       console.log(error);
     }
   };
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
 
-    if (!result.cancelled) {
-      setNewAvatar(result.uri);
-      await uploadePhotoToServer();
-      dispatch(updateAvatar(newAvatar));
+      if (!result.cancelled) {
+        setLoading(true);
+        const avatar = await uploadePhotoToServer(result.uri);
+        dispatch(updateAvatar(avatar));
+        setLoading(false);
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -70,8 +75,8 @@ export default function RegistrationScreen({ navigation }) {
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
       getAllPosts();
-      return unsubscribe;
     });
+    return unsubscribe;
   }, [navigation]);
 
   return (
@@ -80,7 +85,10 @@ export default function RegistrationScreen({ navigation }) {
         source={require("../../img/background-img.jpg")}
         style={styles.background}
       >
-        <ScrollView style={{ flex: 1, height: "100%" }}>
+        <ScrollView
+          contentContainerStyle={{ flex: posts.length > 0 ? "none" : 1 }}
+          bounces={false}
+        >
           <View style={styles.formBackdrop}>
             <View style={styles.logout}>
               <TouchableOpacity onPress={() => dispatch(authSignOutUser())}>
@@ -98,6 +106,7 @@ export default function RegistrationScreen({ navigation }) {
                   style={{ height: "100%", width: "100%", borderRadius: 16 }}
                   source={{ uri: avatar }}
                 ></Image>
+
                 <TouchableOpacity style={styles.addIconBox} onPress={pickImage}>
                   <Svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -122,6 +131,7 @@ export default function RegistrationScreen({ navigation }) {
                   </Svg>
                 </TouchableOpacity>
               </View>
+              {loading && <ActivityIndicator style={styles.loader} />}
             </View>
             <Text style={styles.titleText}>{login}</Text>
             <View style={{ marginHorizontal: 16 }}>
@@ -137,16 +147,28 @@ export default function RegistrationScreen({ navigation }) {
                   <View style={styles.postInfoBox}>
                     <View style={styles.comentsInfo}>
                       <TouchableOpacity
-                        onPress={async () =>
+                        onPress={async () => {
                           navigation.navigate("Comments", {
                             photo: item.photo,
                             id: item.id,
-                          })
-                        }
+                          });
+                          dispatch(
+                            pathSlice.actions.setPath({ path: route.name })
+                          );
+                        }}
                       >
                         <EvilIcons name="comment" size={24} color="#fff" />
                       </TouchableOpacity>
-                      <Text style={styles.textPost}>0</Text>
+                      <Text style={styles.textPost}> {item.comments || 0}</Text>
+                    </View>
+                    <View style={styles.comentsInfo}>
+                      <View>
+                        <AntDesign name="like1" size={24} color="#fff" />
+                      </View>
+                      <Text style={styles.textPost}>
+                        {" "}
+                        {item.likes?.length || 0}
+                      </Text>
                     </View>
                     <View style={styles.locationInfo}>
                       <Ionicons
@@ -156,12 +178,15 @@ export default function RegistrationScreen({ navigation }) {
                       />
                       <Text
                         style={styles.textLocation}
-                        onPress={() =>
+                        onPress={() => {
                           navigation.navigate("Map", {
                             location: item.location,
                             title: item.locationName,
-                          })
-                        }
+                          });
+                          dispatch(
+                            pathSlice.actions.setPath({ path: route.name })
+                          );
+                        }}
                       >
                         {item.locationName}
                       </Text>
@@ -191,13 +216,13 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
     marginTop: 150,
-    height: "100%",
     flex: 1,
   },
   logout: {
     position: "absolute",
     top: 24,
     right: 24,
+    zIndex: 1,
   },
 
   avatarBox: {
@@ -214,6 +239,10 @@ const styles = StyleSheet.create({
     right: 0,
     top: -60,
     alignItems: "center",
+  },
+  loader: {
+    position: "absolute",
+    top: 50,
   },
   addIconBox: {
     position: "absolute",

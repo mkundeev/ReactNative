@@ -48,24 +48,28 @@ export default function RegistrationScreen({ navigation }) {
     Keyboard.dismiss();
   };
   const onSubmit = async () => {
-    const updatedUser = await authSignUpUser({
-      email,
-      password,
-      login,
-    });
-    await uploadePhotoToServer(updatedUser.uid);
-    dispatch(updateAvatar(avatar));
-    dispatch(
-      authSlice.actions.updateProfile({
-        userId: updatedUser.uid,
-        login: updatedUser.displayName,
-        email: updatedUser.email,
-      })
-    );
-    onKeyboradHide();
-    setEmail("");
-    setPassword("");
-    setLogin("");
+    try {
+      const updatedUser = await authSignUpUser({
+        email,
+        password,
+        login,
+      });
+      await uploadePhotoToServer(updatedUser.uid);
+      dispatch(updateAvatar(avatar));
+      dispatch(
+        authSlice.actions.updateProfile({
+          userId: updatedUser.uid,
+          login: updatedUser.displayName,
+          email: updatedUser.email,
+        })
+      );
+      onKeyboradHide();
+      setEmail("");
+      setPassword("");
+      setLogin("");
+    } catch (error) {
+      console.log(error);
+    }
   };
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({

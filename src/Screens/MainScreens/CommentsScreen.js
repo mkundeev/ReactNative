@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { db } from "../../firebase/configFB";
-import { collection, addDoc, getDocs } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  increment,
+} from "firebase/firestore";
 import { useSelector } from "react-redux";
 import {
   View,
@@ -16,12 +23,14 @@ import {
   Platform,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
 
 export default function CommentsScreen({ route }) {
   const { photo, id } = route.params;
   const [isShownKeybord, setIsShownKeybord] = useState(false);
   const [comments, setComments] = useState([]);
   const [comment, setComment] = useState("");
+  const isFocused = useIsFocused();
 
   const { userId, login, avatar } = useSelector((state) => state.auth);
 
@@ -38,7 +47,6 @@ export default function CommentsScreen({ route }) {
 
   useEffect(() => {
     getAllComments();
-
     const hideKeybord = Keyboard.addListener("keyboardDidHide", () => {
       setIsShownKeybord(false);
     });
@@ -46,7 +54,7 @@ export default function CommentsScreen({ route }) {
     return () => {
       hideKeybord.remove();
     };
-  }, [comment]);
+  }, [comment, isFocused]);
 
   const onKeyboradHide = () => {
     setIsShownKeybord(false);
@@ -54,19 +62,22 @@ export default function CommentsScreen({ route }) {
   };
 
   const addComment = async () => {
+    if (comment.trim().length === 0) {
+      onKeyboradHide();
+      return;
+    }
     try {
-      let date = new Date();
-      date = date.toISOString();
-      const docRef = await addDoc(
-        collection(db, "posts", `${id}`, "comments"),
-        {
-          comment,
-          login,
-          userId,
-          date,
-          avatar,
-        }
-      );
+      const date = new Date().toLocaleString();
+      await addDoc(collection(db, "posts", `${id}`, "comments"), {
+        comment,
+        login,
+        userId,
+        date,
+        avatar,
+      });
+      await updateDoc(doc(db, "posts", `${id}`), {
+        comments: increment(1),
+      });
     } catch (e) {
       console.error("Error adding document: ", e);
     }
@@ -80,7 +91,6 @@ export default function CommentsScreen({ route }) {
           style={{
             marginHorizontal: 16,
             marginTop: 32,
-            justifyContent: "space-between",
             flex: 1,
           }}
         >
@@ -88,35 +98,33 @@ export default function CommentsScreen({ route }) {
             source={{ uri: photo }}
             style={{ height: 240, borderRadius: 16, marginBottom: 32 }}
           ></Image>
-          <View style={{ flex: 1, marginBottom: 10 }}>
-            <FlatList
-              data={comments}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={true}
-              renderItem={({ item }) => (
-                <View
-                  style={{
-                    ...styles.commentBox,
-                    flexDirection:
-                      item.userId === userId ? "row" : "row-reverse",
-                  }}
-                >
-                  <View style={styles.comment}>
-                    <Text style={styles.text}>{item?.comment}</Text>
-                    <Text style={styles.textDate}>{item?.date}</Text>
-                  </View>
-                  <Image
-                    source={{ uri: item.avatar }}
-                    style={{
-                      ...styles.avatar,
-                      marginLeft: item.userId === userId ? 16 : 0,
-                      marginRight: item.userId === userId ? 0 : 16,
-                    }}
-                  ></Image>
+          <FlatList
+            style={{ marginBottom: 10 }}
+            data={comments}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View
+                style={{
+                  ...styles.commentBox,
+                  flexDirection: item.userId === userId ? "row" : "row-reverse",
+                }}
+                onStartShouldSetResponder={() => true}
+              >
+                <View style={styles.comment}>
+                  <Text style={styles.text}>{item?.comment}</Text>
+                  <Text style={styles.textDate}>{item?.date}</Text>
                 </View>
-              )}
-            ></FlatList>
-          </View>
+                <Image
+                  source={{ uri: item.avatar }}
+                  style={{
+                    ...styles.avatar,
+                    marginLeft: item.userId === userId ? 16 : 0,
+                    marginRight: item.userId === userId ? 0 : 16,
+                  }}
+                ></Image>
+              </View>
+            )}
+          ></FlatList>
 
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" && "position"}
@@ -184,6 +192,7 @@ const styles = StyleSheet.create({
   commentBox: {
     flexDirection: "row",
     marginBottom: 10,
+    minHeight: 30,
   },
   comment: {
     backgroundColor: "#515151",
